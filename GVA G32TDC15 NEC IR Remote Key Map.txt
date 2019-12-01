@@ -1,0 +1,52 @@
+NEC MAP for GVA Remote
+
+==>  See gva.h !!
+
+
+FEA857 = Power
+FE6897 = Mute
+FE30CF = UP
+FE708F = Right
+FEF00F = left
+?????? = down
+FE08F7 = Enter
+FE48B7 = Source
+FE8877 = Menu
+FEB847 = P Mode
+FE7887 = S Mode
+FEF20D = D Menu
+
+FE58A7 = VOL -
+FED827 = VOL +
+
+FE18E7 = CHAN -
+?????? = CHAN +
+
+FEC23D = ^ Eject
+?????? = >|| PLAY/PAUSE
+?????? = [] STOP
+
+?????? = << FB
+FE629D = >> FF
+FEA25D = |< skip back 
+?????? = >| skip forward
+
+FE728D = D Title
+FE02FD = D Setup (OSD)
+
+
+FECA35 = RED / PROG
+FE4AB5 = GRN / STEP
+FE8A75 = YEL / REPEAT
+FE0AF5 = BLU / AB
+
+FE807F = 1
+FE40BF = 2
+FEC03F = 3
+FE20DF = 4
+FEA05F = 5
+FE609F = 6
+FEE01F = 7 
+FE10EF = 8
+FE906F = 9
+FE00FF = 0
