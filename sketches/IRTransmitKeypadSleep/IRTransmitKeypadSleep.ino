@@ -31,35 +31,58 @@ void setup() {
   // Configure wake up pin as input.
   // This will consumes few uA of current.
   pinMode(wakeUpPin, INPUT);
+  // initial listen
   attachInterrupt(digitalPinToInterrupt(wakeUpPin), wakeUp, FALLING);
 }
 
 // interrupt function
-// TODO this gets called multiple times during the key read process... perhaps detatch the interupt during key read
+// Note: this gets called multiple times during the key read process... even detatching the interrupt does't stop the final KEYUP trigger. So I semaphored back and ignore it.
 void wakeUp() {
-  Serial.println("wakeup!");
+  if (!keyReady) {
+    delay(50); // helps the serial output
+    Serial.println("wakeup!");  delay(50); // helps the serial output
 
-  // Semaphore to the loop
-  keyReady = true;
+    // Semaphore to the loop
+    keyReady = true;
+  }
+  else {
+    delay(50); // helps the serial output
+    Serial.println("IGNORE wakeup!");  delay(50); // helps the serial output
+  }
 }
 
 void loop() {
-  //delay(100); // delay not needed with sleep
-  keyReady = false;
 
-  ///*
-  // Enter power down state with ADC and BOD module disabled.
-  // Wakes up again when the interrupt pin falls low.
-  Serial.print("LowPower.powerDown...");  delay(50); // need delay else the logging doesn't get sent before power down.
-  LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
-  delay(50); // also helps the serial output
-  Serial.println("...LowPower.powerDown ended!"); 
-  // */
+  // Check semaphore.
+  // Only clear the flag when they lift their finger (no key detected) to continue transmitting the NEC FFFFFF repeats..
+  if (keyReady) {
 
-  if (keyReady) readKeySendCommand();
+    // Disable interrupt to prevent further triggers (as the serial IO will now flap the pin as we clock it)
+    detachInterrupt(digitalPinToInterrupt(wakeUpPin));
+
+    int key = readKeySendCommand();
+    if (!key) {
+      // Done for now, go back to sleep
+      // Wake up when the interrupt pin falls low:
+      // INT0 is strapped to the keypad SDO to detect "DV" message (Data Valid) at the start of the serial message (can be configured high or low).
+      attachInterrupt(digitalPinToInterrupt(wakeUpPin), wakeUp, FALLING);
+
+      // Semaphore to the interrupt handler, we're ready to listen to keys again (to ignore the key-up trigger) TODO: do this better!
+      keyReady = false;
+
+      // Enter power down state with ADC and BOD module disabled.
+      Serial.print("LowPower.powerDown...");  delay(50); // need delay else the logging doesn't get sent before power down.
+      LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
+      delay(50); // also helps the serial output
+      Serial.println("...LowPower.powerDown ended!");
+
+    }
+    else delay(100); // delay only needed to slow down the key repeat FFFFFF transmissions, to roughly what I saw the real remote doing
+  }
 }
 
-void readKeySendCommand() {
+// Returns any key detected, or none
+int readKeySendCommand() {
   static int lastKey = -1;
   int key = 0;
   long command;
@@ -92,6 +115,8 @@ void readKeySendCommand() {
     // reset if no key after timeout, to allow for slow repeat.
     lastKey = -1;
   }
+
+  return key;
 }
 
 // ---- lib ----
