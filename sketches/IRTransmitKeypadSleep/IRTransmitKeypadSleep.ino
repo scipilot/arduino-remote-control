@@ -24,6 +24,33 @@ IRsend irsend;
 const int wakeUpPin = 2;
 bool keyReady = false;
 
+
+// ---- Logging ----
+
+// remember last time, to provide log offsets for timing
+long getDelta() {
+  static unsigned long m;
+  unsigned long now = millis();
+  long delta = now - m;
+  m = now;
+
+  return delta;
+}
+// Logs with time since last message for timing (replaces Serial.println)
+void log(char *msg) {
+  Serial.print(getDelta());
+  Serial.print(": ");
+  Serial.println(msg);
+}
+void log(unsigned long msg, int format) {
+  Serial.print(getDelta());
+  Serial.print(": ");
+  Serial.println(msg, format);
+}
+
+// ----
+
+
 void setup() {
   Serial.begin(9600);
   Serial.println("setup...");
@@ -39,22 +66,22 @@ void setup() {
 // Note: this gets called multiple times during the key read process... even detatching the interrupt does't stop the final KEYUP trigger. So I semaphored back and ignore it.
 void wakeUp() {
   if (!keyReady) {
-    delay(50); // helps the serial output
-    Serial.println("wakeup!");  delay(50); // helps the serial output
+    //delay(50); // helps the serial output
+    //Serial.println("wakeup!");  delay(50); // helps the serial output
 
     // Semaphore to the loop
     keyReady = true;
   }
   else {
-    delay(50); // helps the serial output
-    Serial.println("IGNORE wakeup!");  delay(50); // helps the serial output
+    //delay(50); // helps the serial output
+    //Serial.println("IGNORE wakeup!");  delay(50); // helps the serial output
   }
 }
 
 void loop() {
 
   // Check semaphore.
-  // Only clear the flag when they lift their finger (no key detected) to continue transmitting the NEC FFFFFF repeats..
+  // Only clear the flag when they lift their finger (no key detected) to continue transmitting the NEC 0xFFFFFFFF repeats..
   if (keyReady) {
 
     // Disable interrupt to prevent further triggers (as the serial IO will now flap the pin as we clock it)
@@ -71,13 +98,17 @@ void loop() {
       keyReady = false;
 
       // Enter power down state with ADC and BOD module disabled.
-      Serial.print("LowPower.powerDown...");  delay(50); // need delay else the logging doesn't get sent before power down.
+      //Serial.print("LowPower.powerDown...");  delay(50); // need delay else the logging doesn't get sent before power down.
       LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
-      delay(50); // also helps the serial output
-      Serial.println("...LowPower.powerDown ended!");
+
+      //delay(50); // also helps the serial output
+      //Serial.println("...LowPower.powerDown ended!");
 
     }
-    else delay(100); // delay only needed to slow down the key repeat FFFFFF transmissions, to roughly what I saw the real remote doing
+    // GVA remote test showed a 100-102ms delay between 0xFFFFFFFF repeats, sometimes hiccupping to 200ms.
+    // delay(100) here gave 180ms delay
+    // delay(10) here gave 99ms delay
+    else delay(101); // delay only needed to slow down the key repeat 0xFFFFFFFF transmissions, to roughly what I saw the real remote doing
   }
 }
 
@@ -86,30 +117,46 @@ int readKeySendCommand() {
   static int lastKey = -1;
   int key = 0;
   long command;
+  bool newKey = false;
 
   // Read keypad
   key = XC4602_read(8, 9);
   if (key) {
-    Serial.print("Key ");
-    Serial.println(key);
+    //Serial.print("Key ");
+    //Serial.println(key);
 
-    Serial.print("LastKey ");
-    Serial.println(lastKey);
+    //Serial.print("LastKey ");
+    //Serial.println(lastKey);
     if (key == lastKey) {
-      // NEC sends 0xFFFFFF for repeat (not the same command) so detect key held down, then switch to sending FFFFFF
-      command = 0xFFFFFF;
+      // NEC sends 0xFFFFFFFF for repeat (not the same command) so detect key held down, then switch to sending 0xFFFFFFFF
+      // But I couldn't get it to work on the GVA tv. I tried a raw mode, a modified header...
+      command = REPEAT; // 0xFFFFFFFF;
+
+      // 3. try sending the same command faster, after initial delay
+      //command = mapKeyToCommand(key);
+      irsend.sendNEC(command, 32);
+      
+      // 2. try mod in sendNEC
+      // irsend.sendNEC(command, 0);
+
+      // 1. tried this raw suggestion but it didn't work?
+      // sendRawRepeat();
+      // delay(80);// makes up for lack of irsend processing time
     }
     else {
       // Map the key to a command
       command = mapKeyToCommand(key);
       lastKey = key;
+      newKey = true;
+      // Send the command e.g. FE6897 = Mute, 32 bits for NEC
+      // IRsend::sendNEC (unsigned long data,  int nbits)
+      irsend.sendNEC(command, 32);
     }
-    // Send the command e.g. FE6897 = Mute, 32 bits for NEC
-    // IRsend::sendNEC (unsigned long data,  int nbits)
-    irsend.sendNEC(command, 32);
 
-    Serial.print("Sent ");
-    Serial.println(command, HEX);
+    //Serial.print("Sent ");
+    log(command, HEX);
+
+    //if (newKey) delay(100); // initial delay to single keypress repeat (most keyboards have this although the VGA remote doesn't seem to)
   }
   else {
     // reset if no key after timeout, to allow for slow repeat.
@@ -120,6 +167,22 @@ int readKeySendCommand() {
 }
 
 // ---- lib ----
+
+// this didn't work!
+// https://github.com/z3t0/Arduino-IRremote/issues/28#issuecomment-207855989_
+void sendRawRepeat() {
+  unsigned int buf[3];
+  buf[0] = 9000;  // Mark 9ms
+  buf[1] = 2250;  // Space 2.25ms
+  buf[2] = 560;   // Burst
+  irsend.sendRaw(buf, 3, 38);
+}
+
+// I Patched IRsend::sendNEC to amend header space
+//    // PJ: added to fix repeat
+//    if (nbits == 0) space(NEC_RPT_SPACE);
+//    else space(NEC_HDR_SPACE);
+
 
 // returns key number or 0 if no key pressed
 int XC4602_read(int sclpin, int sdopin) {

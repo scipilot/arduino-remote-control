@@ -10,18 +10,42 @@ int RECV_PIN = 11;
 IRrecv irrecv(RECV_PIN);
 decode_results results;
 
+// remember last time, to provide log offsets for timing
+long getDelta(){
+  static unsigned long m;
+  unsigned long now = millis();
+  long delta = now - m;
+  m = now;
+
+  return delta;
+}
+
+// Logs with time since last message for timing (replaces Serial.println)
+void log(char *msg){
+  Serial.print(getDelta());
+  Serial.print(": ");
+  Serial.println(msg);
+}
+void log(unsigned long msg, int format){
+  Serial.print(getDelta());
+  Serial.print(": ");
+  Serial.println(msg, format);
+}
+
 void setup()
 {
   Serial.begin(9600);
   irrecv.enableIRIn(); // Start the receiver
-  Serial.println("waiting..."); 
+  Serial.println("Setup. Waiting..."); 
 }
 
 
 void loop() {
 if(irrecv.decode(&results)){
-    Serial.println(results.value, HEX);
-    
+
+    log(results.value, HEX);
+
+    /*
     switch (results.value) {
       case 0xFF629D:
         Serial.println("UP"); break;
@@ -59,6 +83,7 @@ if(irrecv.decode(&results)){
       case 0xFF52AD:
         Serial.println("#"); break;
     }
+    */
     irrecv.resume(); // Receive the next value
   }
   delay(100);
