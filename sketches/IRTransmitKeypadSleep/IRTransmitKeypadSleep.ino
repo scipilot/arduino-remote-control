@@ -143,6 +143,7 @@ int XC4602_read(int sclpin, int sdopin) {
 //  int keyCode;
 //} key;
 
+// Map 1, generally useful ones, no layout!
 long keyMap[16] = {
   GVA_32TDC15_POWER,   // 1
   GVA_32TDC15_MUTE,    // 2
@@ -153,22 +154,39 @@ long keyMap[16] = {
   GVA_32TDC15_VOL_DN,  // 7
   GVA_32TDC15_VOL_UP,  // 8
   GVA_32TDC15_EJECT,   // 9
-  // GVA_32TDC15_PLAY_PAUSE, code not known yet!
-  GVA_32TDC15_GRN_STEP, // 10 alt-pause
+  GVA_32TDC15_PLAY_PAUSE, // 10   // GVA_32TDC15_GRN_STEP, // 10 alt-pause
   GVA_32TDC15_ENTER, // 11 alt-play after alt-pause
   GVA_32TDC15_P_MODE,  // 12
   GVA_32TDC15_S_MODE,  // 13
   GVA_32TDC15_SOURCE,  // 14
-  0xFEF00F, //= left
-  0xFEF00F, //= left
+  GVA_32TDC15_MENU,   //
+  GVA_32TDC15_D_MENU, //= left
+};
+
+// Map2: first paper cover trial
+long keyMap2[16] = {
+  GVA_32TDC15_P_MODE,   // 1
+  GVA_32TDC15_S_MODE,   // 2
+  GVA_32TDC15_SOURCE,   // 3
+  GVA_32TDC15_MUTE,     // 4
+  GVA_32TDC15_MENU,     // 5
+  GVA_32TDC15_UP,       // 6
+  GVA_32TDC15_EJECT,    // 7
+  GVA_32TDC15_VOL_UP,   // 8
+  GVA_32TDC15_LEFT,     // 9
+  GVA_32TDC15_ENTER,    // 10 alt-play after alt-pause
+  GVA_32TDC15_RIGHT,    // 11
+  GVA_32TDC15_VOL_DN,   // 12
+  GVA_32TDC15_EXIT,     // 13
+  GVA_32TDC15_DOWN,     // 14
+  GVA_32TDC15_PLAY_PAUSE, // 15   // GVA_32TDC15_GRN_STEP, // 10 alt-pause
+  GVA_32TDC15_D_MENU,   // 16
 };
 
 long mapKeyToCommand(int key) {
   long command;
 
-  // command = 0xFE6897;
-
-  command = keyMap[key - 1];
+  command = keyMap2[key - 1];
 
   return command;
 }
