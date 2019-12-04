@@ -111,7 +111,7 @@ void loop() {
       // Note: I modified sendNEC to works with repeat, avoiding undefined shifting.
       // https://github.com/z3t0/Arduino-IRremote/issues/28
       // https://stackoverflow.com/questions/59156677/how-can-shift-left-give-different-results-in-different-functions
-      // TODO: PR/ re-patch in future!
+      // See PR for fix https://github.com/z3t0/Arduino-IRremote/pull/609
     }
     else {
       // Map the key to a command
