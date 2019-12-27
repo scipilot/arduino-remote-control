@@ -9,6 +9,7 @@
  */
 
 #include <IRremote.h>
+#include "gva.h"
 
 /* 
 *  Default is Arduino pin D11. 
@@ -37,7 +38,6 @@ void dump(decode_results *results) {
   }
   else if (results->decode_type == NEC) {
     Serial.print("Decoded NEC: ");
-
   }
   else if (results->decode_type == SONY) {
     Serial.print("Decoded SONY: ");
@@ -84,6 +84,50 @@ void dump(decode_results *results) {
     Serial.print(" ");
   }
   Serial.println();
+
+  // PJ: I added my key decoding here too
+  if (results->decode_type == NEC) {
+    int key = mapCommandToKey(results->value);
+    Serial.print("Detected KEY: ");
+    Serial.println(key);
+  }
+}
+
+// Map2: first paper cover trial
+long keyMap2[16] = {
+  GVA_32TDC15_P_MODE,   // 1
+  GVA_32TDC15_S_MODE,   // 2
+  GVA_32TDC15_SOURCE,   // 3
+  GVA_32TDC15_MUTE,     // 4
+  GVA_32TDC15_MENU,     // 5
+  GVA_32TDC15_UP,       // 6
+  GVA_32TDC15_EJECT,    // 7
+  GVA_32TDC15_VOL_UP,   // 8
+  GVA_32TDC15_LEFT,     // 9
+  GVA_32TDC15_ENTER,    // 10 alt-play after alt-pause
+  GVA_32TDC15_RIGHT,    // 11
+  GVA_32TDC15_VOL_DN,   // 12
+  GVA_32TDC15_EXIT,     // 13
+  GVA_32TDC15_DOWN,     // 14
+  GVA_32TDC15_PLAY_PAUSE, // 15   // GVA_32TDC15_GRN_STEP, // 10 alt-pause
+  GVA_32TDC15_D_MENU,   // 16
+};
+long mapKeyToCommand(int key) {
+  long command;
+
+  command = keyMap2[key - 1];
+
+  return command;
+}
+
+// Finds the 1-16 key from the HEX IR command
+int mapCommandToKey(long command){
+    for (int i = 1; i < 17; i++) {
+      if(keyMap2[i] == command){
+        return i;
+      }
+    }
+    return -1;
 }
 
 void loop() {
