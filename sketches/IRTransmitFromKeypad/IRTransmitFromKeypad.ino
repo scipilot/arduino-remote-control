@@ -5,6 +5,7 @@
 // Keypad: Connect SCL on 8, SDO on 9
 // IR Led: Connect "S" to PWM Pin 3, ground via 100-300 Ohms
 
+// todo: make a short initial repeat delay, e.g. 150ms, then a faster repeat loop e.g. 50ms (or none really, the sending takes 80ms)
 
 /*
    NEC sends 0xFFFFFFFF for repeat (not the same command) so detect key held down, then switch to sending REPEAT code.
@@ -40,6 +41,10 @@
 #include "gva.h" // my home made map of GVA (Good Guys cheap own-brand)
 
 IRsend irsend;
+
+#define LOOP_DELAY 100
+
+int ledPin = 13;
 
 // ---- Logging ----
 
@@ -87,10 +92,12 @@ void runtest(unsigned long data,  int nbits) {
 
 void setup() {
   Serial.begin(9600);
+  Serial.print("IRTransmitFromKeypad: setup...");
+  pinMode(ledPin, OUTPUT); // LED for diag when command is transmitted
 }
 
 void loop() {
-  //  delay(100);
+  delay(LOOP_DELAY);
   static int lastKey = -1;
 
   int key = 0, nbits = 32;
@@ -99,16 +106,16 @@ void loop() {
   // Read keypad
   key = XC4602_read(8, 9);
   if (key) {
-    //    Serial.print("Key:");
-    //    Serial.print(key);
-    //    Serial.print(" LastKey:");
-    //    Serial.println(lastKey);
+        Serial.print(" Key:");
+        Serial.print(key);
+        Serial.print(" LastKey:");
+        Serial.print(lastKey);
     if (key == lastKey) {
       // NEC sends 0xFFFFFFFF for repeat (not the same command) so detect key held down, then switch to sending FFFFFFFF
       command =  REPEAT;
       nbits = 0;
 
-      // Note: I modified sendNEC to works with repeat, avoiding undefined shifting.
+      // Note: I modified sendNEC to work with repeat, avoiding undefined shifting.
       // https://github.com/z3t0/Arduino-IRremote/issues/28
       // https://stackoverflow.com/questions/59156677/how-can-shift-left-give-different-results-in-different-functions
       // See PR for fix https://github.com/z3t0/Arduino-IRremote/pull/609
@@ -119,10 +126,18 @@ void loop() {
       lastKey = key;
     }
     
+    // Flash led while sending
+    digitalWrite(ledPin, HIGH); // Debug LED
+    
     // Send the command e.g. FE6897 = Mute, 32 bits for NEC, (no data bits for repeat signal).
     irsend.sendNEC(command, nbits);
-    log(command, HEX);
+    Serial.print(" NEC:");
+    Serial.print(command, HEX);
+    //log(command, HEX);
+    Serial.println("");
     delay(92);
+
+    digitalWrite(ledPin, LOW); // debug LED
   }
   else {
     // reset if no key after timeout, to allow for slow repeat.

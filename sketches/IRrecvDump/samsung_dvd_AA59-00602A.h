@@ -1,0 +1,53 @@
+
+// NEC MAP for Panasonic Remote DVD IR6
+#define AA59_00602A_POWER						E0E040BF			
+#define AA59_00602A_UP							E0E006F9		
+#define AA59_00602A_RIGHT						E0E046B9			
+#define AA59_00602A_LEFT						E0E0A659			
+#define AA59_00602A_DOWN						E0E08679
+#define AA59_00602A_ENTER						E0E016E9     // OK			
+#define AA59_00602A_EXIT						E0E0B44B
+#define AA59_00602A_SOURCE						E0E0807F
+// #define AA59_00602A_DISPLAY						0x720D8C26
+#define AA59_00602A_VOL_UP						E0E0E01F
+#define AA59_00602A_VOL_DN						E0E0D02F
+#define AA59_00602A_CHAN_UP						E0E048B7            // P
+#define AA59_00602A_CHAN_DN						E0E008F7            // P
+#define AA59_00602A_MUTE	    				E0E0F00F
+#define AA59_00602A_PAUSE	    				E0E052AD
+#define AA59_00602A_PLAY		    			E0E0E21D
+#define AA59_00602A_STOP						E0E0629D
+#define AA59_00602A_FAST_BACK					E0E0A25D
+#define AA59_00602A_FAST_FORW					E0E012ED			
+// #define AA59_00602A_SKIP_BACK					0x1F6E01C9					  // ALSO ON FAST BACK
+// #define AA59_00602A_SKIP_FORWARD				0x2E8C2A89
+// #define AA59_00602A_AUDIO      					0xB893D8E7
+#define AA59_00602A_SUBTITLE  					E0E0A45B    // ad subt
+#define AA59_00602A_RED  		    			E0E036C9	// A    			
+#define AA59_00602A_GRN		    	    		E0E028D7    // B				
+#define AA59_00602A_YEL	    			    	E0E0A857	// C				
+#define AA59_00602A_BLU 						E0E06897    // D				
+#define AA59_00602A_NUM_1						E0E020DF		
+#define AA59_00602A_NUM_2						E0E0A05F		
+#define AA59_00602A_NUM_3						E0E0609F		
+#define AA59_00602A_NUM_4						E0E010EF		
+#define AA59_00602A_NUM_5						E0E0906F		
+#define AA59_00602A_NUM_6						E0E050AF		
+#define AA59_00602A_NUM_7						E0E030CF		 
+#define AA59_00602A_NUM_8						E0E0B04F		
+#define AA59_00602A_NUM_9						E0E0708F		
+#define AA59_00602A_NUM_0						E0E08877		
+// #define AA59_00602A_PROG_CHECK					0x24E4BE49
+// #define AA59_00602A_STATUS  					0x74666B4D    // i
+#define AA59_00602A_RETURN  					E0E01AE5
+// #define AA59_00602A_DEL  				    	0xDB6AB119
+#define AA59_00602A_GUIDE  				    	E0E0F20D
+#define AA59_00602A_INFO  				        E0E0F807
+#define AA59_00602A_TOOLS  				        E0E0D22D
+#define AA59_00602A_TTX_MIX  				    E0E034CB
+#define AA59_00602A_PRE_CH  				    E0E0C837
+#define AA59_00602A_CH_LIST  				    E0E0D629
+#define AA59_00602A_CONTENT  				    E0E09E61
+#define AA59_00602A_E_MANUAL  				    E0E0FC03
+#define AA59_00602A_P_SIZE  				    E0E07C83
+

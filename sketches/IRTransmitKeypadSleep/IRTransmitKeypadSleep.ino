@@ -4,6 +4,10 @@
 
 // TODO: need to prove we can wake on the interruypt and then read the keypad signal OK
 
+// TODO: Also see this example of adding an interrupt on the SDO Pin - no need to crosslink https://forum.arduino.cc/index.php?topic=301382.msg2252580#msg2252580
+//    See stumpy.cpp, he uses INT1 on Pin 3, and also jumpers TP1/SAHL for active high serial out.
+//                                              presumably for the rising edge detection setup.
+
 // Keypad: Connect SCL on 8, SDO on 9
 // IR Led: Connect "S" to PWM Pin 3, ground via 100-300 Ohms
 

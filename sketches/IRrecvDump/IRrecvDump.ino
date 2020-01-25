@@ -25,6 +25,7 @@ decode_results results;
 void setup()
 {
   Serial.begin(9600);
+  Serial.println("IRRecvDump starting...");
   irrecv.enableIRIn(); // Start the receiver
 }
 
@@ -69,10 +70,11 @@ void dump(decode_results *results) {
   Serial.print(" (");
   Serial.print(results->bits, DEC);
   Serial.println(" bits)");
+  // raw
   Serial.print("Raw (");
   Serial.print(count, DEC);
   Serial.print("): ");
-
+/*
   for (int i = 1; i < count; i++) {
     if (i & 1) {
       Serial.print(results->rawbuf[i]*USECPERTICK, DEC);
@@ -82,7 +84,7 @@ void dump(decode_results *results) {
       Serial.print((unsigned long) results->rawbuf[i]*USECPERTICK, DEC);
     }
     Serial.print(" ");
-  }
+  }*/
   Serial.println();
 
   // PJ: I added my key decoding here too
@@ -91,6 +93,7 @@ void dump(decode_results *results) {
     Serial.print("Detected KEY: ");
     Serial.println(key);
   }
+  Serial.println("--");
 }
 
 // Map2: first paper cover trial
@@ -124,7 +127,7 @@ long mapKeyToCommand(int key) {
 int mapCommandToKey(long command){
     for (int i = 1; i < 17; i++) {
       if(keyMap2[i] == command){
-        return i;
+        return i+1;
       }
     }
     return -1;
