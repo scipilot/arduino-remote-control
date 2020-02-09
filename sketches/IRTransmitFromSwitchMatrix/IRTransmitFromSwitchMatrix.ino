@@ -42,7 +42,7 @@
 
 IRsend irsend;
 
-#define LOOP_DELAY 500
+#define LOOP_DELAY 50
 
 const int BIT1_MASK = B0001;
 const int BIT2_MASK = B0010;
@@ -185,51 +185,60 @@ void loop() {
 int SwitchMatrix_read() {
   int key = 0;                           //default to no keys pressed
   int col, rows, row;
+  int row1, row2, row3, row4;
 
   // To find the switch pressed, must scan through all four outputs and read the inputs, then map.
- 
   col = B0001;
   for (int i = 1; i <= 4; i++) {
   
     setOutputs(col);
+    delay(10); // let pins settle?
 
     rows = 0;
-    row = digitalRead(row4Pin);
+    row4 = row = digitalRead(row4Pin);
     rows = rows + BIT4_MASK * !row;
-//    Serial.print(" r4=");
-//    Serial.print(row);
-    row = digitalRead(row3Pin);
+    row3 = row = digitalRead(row3Pin);
     rows = rows + BIT3_MASK * !row;
-//    Serial.print(" r3=");
-//    Serial.print(row);
-    row = digitalRead(row2Pin);
+    row2 = row = digitalRead(row2Pin);
     rows = rows + BIT2_MASK * !row;
-//    Serial.print(" r2=");
-//    Serial.print(row);
-    row = digitalRead(row1Pin);
+    row1 = row = digitalRead(row1Pin);
     rows = rows + BIT1_MASK * !row; 
-//    Serial.print(" r1=");
-//    Serial.print(row);
 if(rows){
+    Serial.print(" c=");
+    Serial.print(col);
+    Serial.print(" r4=");
+    Serial.print(row4);
+    Serial.print(" r3=");
+    Serial.print(row3);
+    Serial.print(" r2=");
+    Serial.print(row2);
+    Serial.print(" r1=");
+    Serial.print(row1);
     Serial.print(" =>");
     Serial.println(rows);
-  }
-    col = col << 1;
-
+}
     // First key found takes precenence
-    if(rows) return lookupKey(rows,col);
+    if(rows) {
+      setOutputs(0);
+      return lookupKey(rows,col);
+    }
+
+    // Else keep trying
+    col = col << 1;
   }
   
+  setOutputs(0);
   return 0;
 }
 
 // Sets the output pins to the state in the bit mask.
 // mask: 1 byte, lower nibble: 1110, 1101, 1011, 0111 = 14, 13, 11 or 7
+// Note: 0 is "on" (I invert it because low and not-powered are not distinguishable)
 int setOutputs(int mask){
-    digitalWrite(col1Pin, mask & 1 ? HIGH : LOW);
-    digitalWrite(col2Pin, mask & 2 ? HIGH : LOW);
-    digitalWrite(col3Pin, mask & 4 ? HIGH : LOW);
-    digitalWrite(col4Pin, mask & 8 ? HIGH : LOW);
+    digitalWrite(col1Pin, mask & 1 ? LOW : HIGH);
+    digitalWrite(col2Pin, mask & 2 ? LOW : HIGH);
+    digitalWrite(col3Pin, mask & 4 ? LOW : HIGH);
+    digitalWrite(col4Pin, mask & 8 ? LOW : HIGH);
 }
 
 // Lookup the index of the row-col combo, only supports one key at a time though.
@@ -265,7 +274,7 @@ int lookupKey(int row, int col){
     Serial.print(" col=");
     Serial.print(col);
   
-  int hash = row + col * 16; // shift col into upper nibble
+  int hash = row + (col << 4); // shift col into upper nibble
 
     Serial.print(" hash=");
     Serial.println(hash);
