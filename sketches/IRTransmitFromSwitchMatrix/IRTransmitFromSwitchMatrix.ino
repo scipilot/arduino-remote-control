@@ -42,7 +42,7 @@
 
 IRsend irsend;
 
-#define LOOP_DELAY 50
+#define LOOP_DELAY 100
 
 const int BIT1_MASK = B0001;
 const int BIT2_MASK = B0010;
@@ -255,10 +255,10 @@ int SwitchMatrixMap[16] = {
   B00100100,    // 7
   B00101000,    // 8
 
-  B01010001,    // 9
-  B01010010,    // 10
-  B01010100,    // 11
-  B01011000,    // 12
+  B01000001,    // 9
+  B01000010,    // 10
+  B01000100,    // 11
+  B01001000,    // 12
 
   B10000001,    // 13
   B10000010,    // 14
