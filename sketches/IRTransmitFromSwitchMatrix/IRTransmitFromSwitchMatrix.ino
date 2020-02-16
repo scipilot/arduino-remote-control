@@ -1,9 +1,9 @@
-// Initial draft of BUTTON controlled IR
+  // Initial draft of BUTTON controlled IR
 // This was forked from the Capacitive Keypad "TransmitFromKeypad" which was unreliable.
 //
 
-// IR Led: Connect "S" to PWM Pin "ledPin" const, ground via 100-300 Ohms
-// Keys: TBC
+// IR Led: Connect "S" to PWM Pin 3, ground via 100-300 Ohms
+// Keypad: 4 x 4 microswitch matrix with 1k Ohmn on each output column. Inputs are row1Pin etc, which are pulled high internally.
 
 // todo: make a short initial repeat delay, e.g. 150ms, then a faster repeat loop e.g. 50ms (or none really, the sending takes 80ms)
 
@@ -59,6 +59,7 @@ const int ROW2_MASK = COL2_MASK;
 const int ROW3_MASK = COL3_MASK;
 const int ROW4_MASK = COL4_MASK;
 
+// IR PIN is PWM pin 3 by default
 // Row / Col pins of the 4x4 switch matrix
 int col1Pin = 5;
 int col2Pin = 6;
@@ -68,6 +69,7 @@ int row1Pin = 9;
 int row2Pin = 10;
 int row3Pin = 11;
 int row4Pin = 12;
+// Diag / UX feedback LED (helps to know it's working!)
 int ledPin = 13;
 
 // ---- Logging ----
@@ -329,10 +331,29 @@ long keyMap2[16] = {
   GVA_32TDC15_PLAY_PAUSE, // 15   // GVA_32TDC15_GRN_STEP, // 10 alt-pause
   GVA_32TDC15_D_MENU,   // 16
 };
+// Map3: microswitch row/col (same layout as Map2)
+long keyMap3[16] = {
+  GVA_32TDC15_MUTE,     //  1
+  GVA_32TDC15_VOL_UP,   //  2
+  GVA_32TDC15_VOL_DN,   //  3
+  GVA_32TDC15_D_MENU,   //  4
+  GVA_32TDC15_SOURCE,   //  5
+  GVA_32TDC15_EJECT,    //  6
+  GVA_32TDC15_RIGHT,    //  7
+  GVA_32TDC15_PLAY_PAUSE, // 8   // GVA_32TDC15_GRN_STEP, // 10 alt-pause
+  GVA_32TDC15_S_MODE,   //  9
+  GVA_32TDC15_UP,       // 10
+  GVA_32TDC15_ENTER,    // 11 alt-play after alt-pause
+  GVA_32TDC15_DOWN,     // 12
+  GVA_32TDC15_P_MODE,   // 13
+  GVA_32TDC15_MENU,     // 14
+  GVA_32TDC15_LEFT,     // 15
+  GVA_32TDC15_EXIT,     // 16
+};
 long mapKeyToCommand(int key) {
   long command;
 
-  command = keyMap2[key - 1];
+  command = keyMap3[key - 1];
 
   return command;
 }
