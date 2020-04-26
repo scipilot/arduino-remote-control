@@ -35,6 +35,15 @@
     FFFFFFFF
 
   This wanders slightly off the above: 550-600 burst, header 2200-2250
+
+  Benchmarking REPEAT timing (26/04/2020) found the repeat cycle (see specs/IR-NEC-repeat-timing.png)
+  - with all the printSerials in place (but no monitor connected)
+  - with the extra delay(92)
+  - with LOOP_DELAY 50  = 266ms and doesn't work
+  - with lOOP_DELAY  1  = 216ms and doesn't wrk
+  - then removed the delay(92) below!
+  - with lOOP_DELAY  1  = 126ms and WORKS (should be 110ms)
+  
 */
 
 #include <IRremote.h>
@@ -42,7 +51,7 @@
 
 IRsend irsend;
 
-#define LOOP_DELAY 100
+#define LOOP_DELAY 1
 
 const int BIT1_MASK = B0001;
 const int BIT2_MASK = B0010;
@@ -171,8 +180,10 @@ void loop() {
     Serial.print(command, HEX);
     //log(command, HEX);
     Serial.println("");
-    delay(92);
-
+    // what was this 92 delay for? 
+    // I removed it as it was maing the repeat signal too slow 
+    //delay(92); 
+    
     digitalWrite(ledPin, LOW); // debug LED
   }
   else {
