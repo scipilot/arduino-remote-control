@@ -48,6 +48,7 @@
 
 #include <IRremote.h>
 #include "gva.h" // my home made map of GVA (Good Guys cheap own-brand)
+#include <LowPower.h>
 
 IRsend irsend;
 
@@ -142,19 +143,23 @@ void setup() {
 }
 
 void loop() {
-  delay(LOOP_DELAY);
+//  delay(LOOP_DELAY);
   static int lastKey = -1;
 
   int key = 0, nbits = 32;
   long command;
 
+  // Power saving options
+  // Enter power down state for 8 s with ADC and BOD module disabled
+  LowPower.powerDown(SLEEP_60MS, ADC_OFF, BOD_OFF);  
+
   // Read keypad
   key = SwitchMatrix_read();
   if (key) {
-        Serial.print(" Key:");
-        Serial.print(key);
-        Serial.print(" LastKey:");
-        Serial.print(lastKey);
+//        Serial.print(" Key:");
+//        Serial.print(key);
+//        Serial.print(" LastKey:");
+//        Serial.print(lastKey);
     if (key == lastKey) {
       // NEC sends 0xFFFFFFFF for repeat (not the same command) so detect key held down, then switch to sending FFFFFFFF
       command =  REPEAT;
@@ -177,10 +182,10 @@ void loop() {
     
     // Send the command e.g. FE6897 = Mute, 32 bits for NEC, (no data bits for repeat signal).
     irsend.sendNEC(command, nbits);
-    Serial.print(" NEC:");
-    Serial.print(command, HEX);
+//    Serial.print(" NEC:");
+//    Serial.print(command, HEX);
     //log(command, HEX);
-    Serial.println("");
+//    Serial.println("");
     // what was this 92 delay for? 
     // I removed it as it was maing the repeat signal too slow 
     //delay(92); 
@@ -206,7 +211,7 @@ int SwitchMatrix_read() {
   for (int i = 1; i <= 4; i++) {
   
     setOutputs(col);
-    delay(10); // let pins settle?
+//    delay(1); // let pins settle? (was 10 which adds 27ms to cycle, found 1 works OK)
 
     rows = 0;
     row4 = row = digitalRead(row4Pin);
@@ -217,20 +222,20 @@ int SwitchMatrix_read() {
     rows = rows + BIT2_MASK * !row;
     row1 = row = digitalRead(row1Pin);
     rows = rows + BIT1_MASK * !row; 
-if(rows){
-    Serial.print(" c=");
-    Serial.print(col);
-    Serial.print(" r4=");
-    Serial.print(row4);
-    Serial.print(" r3=");
-    Serial.print(row3);
-    Serial.print(" r2=");
-    Serial.print(row2);
-    Serial.print(" r1=");
-    Serial.print(row1);
-    Serial.print(" =>");
-    Serial.println(rows);
-}
+//if(rows){
+//    Serial.print(" c=");
+//    Serial.print(col);
+//    Serial.print(" r4=");
+//    Serial.print(row4);
+//    Serial.print(" r3=");
+//    Serial.print(row3);
+//    Serial.print(" r2=");
+//    Serial.print(row2);
+//    Serial.print(" r1=");
+//    Serial.print(row1);
+//    Serial.print(" =>");
+//    Serial.println(rows);
+//}
     // First key found takes precenence
     if(rows) {
       setOutputs(0);
@@ -283,20 +288,20 @@ int SwitchMatrixMap[16] = {
 // Converts the row-col combination into our key index. 
 // Returns 1-16, or 0 for error/not found.
 int lookupKey(int row, int col){
-    Serial.print(" lookup row=");
-    Serial.print(row);
-    Serial.print(" col=");
-    Serial.print(col);
+//    Serial.print(" lookup row=");
+//    Serial.print(row);
+//    Serial.print(" col=");
+//    Serial.print(col);
   
   int hash = row + (col << 4); // shift col into upper nibble
 
-    Serial.print(" hash=");
-    Serial.println(hash);
+//    Serial.print(" hash=");
+//    Serial.println(hash);
     
   for(int i=0; i<=15; i++){
    // Serial.print(" SwitchMatrixMap[i]=");
    // Serial.println(SwitchMatrixMap[i]);
-    if(SwitchMatrixMap[i] == hash) Serial.println(i+1);
+//    if(SwitchMatrixMap[i] == hash) Serial.println(i+1);
     if(SwitchMatrixMap[i] == hash) return i+1;
   }
 
