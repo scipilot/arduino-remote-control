@@ -164,6 +164,7 @@ void loop() {
       // https://github.com/z3t0/Arduino-IRremote/issues/28
       // https://stackoverflow.com/questions/59156677/how-can-shift-left-give-different-results-in-different-functions
       // See PR for fix https://github.com/z3t0/Arduino-IRremote/pull/609
+      // https://github.com/z3t0/Arduino-IRremote/issues/28
     }
     else {
       // Map the key to a command
