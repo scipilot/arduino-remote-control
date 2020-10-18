@@ -52,7 +52,7 @@
 
 IRsend irsend;
 
-#define LOOP_DELAY 1
+#define LOOP_DELAY 100
 
 const int BIT1_MASK = B0001;
 const int BIT2_MASK = B0010;
@@ -69,6 +69,7 @@ const int ROW2_MASK = COL2_MASK;
 const int ROW3_MASK = COL3_MASK;
 const int ROW4_MASK = COL4_MASK;
 
+int wakePin = 2;
 // IR PIN is PWM pin 3 by default
 // Row / Col pins of the 4x4 switch matrix
 int col1Pin = 5;
@@ -105,6 +106,28 @@ void log(unsigned long msg, int format) {
   Serial.println(msg, format);
 }
 
+// ---- IDLE sleeping
+
+unsigned long idleTime, idleTimeout = 5000;
+
+// How long since the last key was pressed?
+void setIdleTime() {
+  idleTime = millis();
+  Serial.println("setIdleTime now:"); Serial.println(idleTime);
+}
+long getIdleTime() {
+  //Serial.println("getIdleTime millis() - idleTime:"); Serial.println(millis() - idleTime);
+  //long now = millis();
+  //long delta = now - idleTime;
+  //Serial.println("getIdleTime delta"); Serial.println(delta);
+  //return delta;
+  return millis() - idleTime;
+}
+bool getIdleTimeout() {
+  return getIdleTime() > idleTimeout;
+}
+
+
 // ----
 
 void runtest(unsigned long data,  int nbits) {
@@ -138,20 +161,21 @@ void setup() {
   pinMode(row2Pin, INPUT_PULLUP);
   pinMode(row3Pin, INPUT_PULLUP);
   pinMode(row4Pin, INPUT_PULLUP);
+  pinMode(wakePin, INPUT);
   delay(2);
-
+  setIdleTime();
 }
 
 void loop() {
-//  delay(LOOP_DELAY);
+  //delay(LOOP_DELAY);
   static int lastKey = -1;
-
   int key = 0, nbits = 32;
   long command;
 
-  // Power saving options
+  // TODO: This is being replaced by the idle-timeout-sleep instead of a sleep duty cycle
+  // Power saving options (note: this breaks the serial port timing!)
   // Enter power down state for 8 s with ADC and BOD module disabled
-  LowPower.powerDown(SLEEP_60MS, ADC_OFF, BOD_OFF);  
+  // LowPower.powerDown(SLEEP_60MS, ADC_OFF, BOD_OFF);  
 
   // Read keypad
   key = SwitchMatrix_read();
@@ -182,20 +206,49 @@ void loop() {
     
     // Send the command e.g. FE6897 = Mute, 32 bits for NEC, (no data bits for repeat signal).
     irsend.sendNEC(command, nbits);
-//    Serial.print(" NEC:");
-//    Serial.print(command, HEX);
-    //log(command, HEX);
-//    Serial.println("");
-    // what was this 92 delay for? 
-    // I removed it as it was maing the repeat signal too slow 
-    //delay(92); 
+    // Serial.print(" NEC:");
+    // Serial.print(command, HEX);
+    // log(command, HEX);
+    // Serial.println("");
     
     digitalWrite(ledPin, LOW); // debug LED
+
+    setIdleTime();
   }
   else {
     // reset if no key after timeout, to allow for slow repeat.
     lastKey = -1;
   }
+
+  // Check for idle timeout and go to sleep to save power
+  if(getIdleTimeout()){
+    Serial.print(" Idle Timeout!");
+
+    Serial.print(" Idle Timeout: setting up interrupt pins");
+    // Allow wake up pin to trigger interrupt on low.
+    attachInterrupt(digitalPinToInterrupt(wakePin), wakeUp, CHANGE);
+
+    // Take all outputs low, so the switches can pull down the interrupt pin, while the strobing is paused.
+    setOutputs(15);
+
+    Serial.print(" Idle Timeout: Going to sleep...");
+    delay(100);
+    // Enter power down state with ADC and BOD module disabled.
+    // Wake up when wake up pin is low.
+    LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF); 
+    
+    delay(100);
+    Serial.print(" Idle Timeout: Wakeup!");
+    // Disable external pin interrupt on wake up pin.
+    detachInterrupt(digitalPinToInterrupt(wakePin)); 
+
+    // Begin the idle countdown again...
+    setIdleTime();
+  }
+}
+
+// Interrupt handler, don't really need to do anything
+void wakeUp(){
 }
 
 // ---- lib ----
@@ -211,7 +264,8 @@ int SwitchMatrix_read() {
   for (int i = 1; i <= 4; i++) {
   
     setOutputs(col);
-//    delay(1); // let pins settle? (was 10 which adds 27ms to cycle, found 1 works OK)
+    // SEEMS NOT NEEDED: 
+    //delay(100); // let pins settle? (was 10 which adds 27ms to cycle, found 1 works OK)
 
     rows = 0;
     row4 = row = digitalRead(row4Pin);
@@ -222,20 +276,20 @@ int SwitchMatrix_read() {
     rows = rows + BIT2_MASK * !row;
     row1 = row = digitalRead(row1Pin);
     rows = rows + BIT1_MASK * !row; 
-//if(rows){
-//    Serial.print(" c=");
-//    Serial.print(col);
-//    Serial.print(" r4=");
-//    Serial.print(row4);
-//    Serial.print(" r3=");
-//    Serial.print(row3);
-//    Serial.print(" r2=");
-//    Serial.print(row2);
-//    Serial.print(" r1=");
-//    Serial.print(row1);
-//    Serial.print(" =>");
-//    Serial.println(rows);
-//}
+    //if(rows){
+    //    Serial.print(" c=");
+    //    Serial.print(col);
+    //    Serial.print(" r4=");
+    //    Serial.print(row4);
+    //    Serial.print(" r3=");
+    //    Serial.print(row3);
+    //    Serial.print(" r2=");
+    //    Serial.print(row2);
+    //    Serial.print(" r1=");
+    //    Serial.print(row1);
+    //    Serial.print(" =>");
+    //    Serial.println(rows);
+    //}
     // First key found takes precenence
     if(rows) {
       setOutputs(0);
