@@ -169,10 +169,8 @@ void runtest(unsigned long data,  int nbits) {
   Serial.println(1UL << (nbits - 1));
 }
 
-
-void setup() {
-  Serial.begin(9600);
-  Serial.print("IRTransmitFromKeypad: setup...");
+// Set pins to active state
+void pinSetup(){
   pinMode(ledPin, OUTPUT); // LED for diag when command is transmitted
   pinMode(colAPin, OUTPUT);
   pinMode(colBPin, OUTPUT);
@@ -184,16 +182,59 @@ void setup() {
   pinMode(row3Pin, INPUT_PULLUP);
   pinMode(row4Pin, INPUT_PULLUP);
   pinMode(wakePin, INPUT_PULLUP);
+}
+// Set pins to the optimum low-power state for sleeping (see benchmarks, seems to vary on different hardware)
+// Note: for interupt design, must take outputs low during sleep, so any key-switch can pull down the interrupt pin while the strobing is paused.
+void pinSleep(){
+    for (byte i = 0; i <= A5; i++){
+      pinMode (i, OUTPUT);
+      digitalWrite (i, LOW);
+    }
+  pinMode(wakePin, INPUT_PULLUP);
+}
+
+/* Example of low power benchmark (try INPUT/OUTPUT * LOW/HIGH - see notes)
+ void setupGammonDemoLowPower () {
+
+  for (byte i = 0; i <= A5; i++)
+    {
+    pinMode (i, INPUT);    // changed as per below
+    digitalWrite (i, LOW);  //     ditto
+    }
+    
+  // disable ADC
+  ADCSRA = 0;  
+  
+  set_sleep_mode (SLEEP_MODE_PWR_DOWN);  
+  noInterrupts ();           // timed sequence follows
+  sleep_enable();
+ 
+  // turn off brown-out enable in software
+  MCUCR = bit (BODS) | bit (BODSE);
+  MCUCR = bit (BODS); 
+  interrupts ();             // guarantees next instruction executed
+  sleep_cpu ();              // sleep within 3 clock cycles of above
+
+}  // end of setup
+*/
+
+void setup() {
+  Serial.begin(9600);
+  Serial.print("IRTransmitFromKeypad: setup...");
+  pinSetup();
   delay(2);
   setIdleTime();
 
-  // TODO POWER SAVING EXPERIMENTS
-  //  disable_wdt(); // todo experiment with power reduction
-  //  disable_adc();
-  //  disable_uart();             // Disable internal serial logic
+  // TODO remove POWER SAVING EXPERIMENTS
+  // disable_wdt(); // todo experiment with power reduction
+  // disable_adc();
+  // disable_uart();             // Disable internal serial logic
   // inputs_lowpower(); // can't use
 }
 
+void loopNull(){}
+
+// Main loop
 void loop() {
   //delay(LOOP_DELAY);
   static int lastKey = -1;
@@ -248,23 +289,25 @@ void loop() {
     lastKey = -1;
   }
 
-  // todo disable the sleeping
+  // todo remove, disable the sleeping
   //return;
 
   // Check for idle timeout and go to sleep to save power
   if (getIdleTimeout()) {
     Serial.print(" Idle Timeout!");
-    sleep_enable();                           // enables the sleep bit in the mcucr register
+    //  TODO remove already done by low-power lib? sleep_enable();                           // enables the sleep bit in the mcucr register
 
     Serial.print(" Idle Timeout: setting up interrupt pins");
     // Allow wake up pin to trigger interrupt on low.
     attachInterrupt(digitalPinToInterrupt(wakePin), wakeUp, CHANGE);
 
     // Take all outputs low, so the switches can pull down the interrupt pin, while the strobing is paused.
-    setOutputs(31);
+    // setOutputs(31);
+    pinSleep(); // now does all pins for power saving
 
     Serial.print(" Idle Timeout: Going to sleep...");
     delay(100);
+    
     // Enter power down state with ADC and BOD module disabled.
     // Wake up when wake up pin is low.
     LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
@@ -276,6 +319,9 @@ void loop() {
     Serial.print(" Idle Timeout: Wakeup!");
     // Disable external pin interrupt on wake up pin.
     detachInterrupt(digitalPinToInterrupt(wakePin));
+
+    // restore active pin function
+    pinSetup();
 
     // Begin the idle countdown again...
     setIdleTime();
