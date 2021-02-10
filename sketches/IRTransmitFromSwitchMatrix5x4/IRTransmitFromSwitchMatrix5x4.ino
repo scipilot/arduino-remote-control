@@ -3,7 +3,7 @@
 //
 //
 // IR Led: Connect "S" to PWM Pin 3, ground via 100-300 Ohms
-// Keypad: 4 x 4 microswitch matrix with 1k Ohmn on each output column. Inputs are row1Pin etc, which are pulled high internally.
+// Keypad: 4 x 4 microswit ch matrix with 1k Ohmn on each output column. Inputs are row1Pin etc, which are pulled high internally.
 //
 // todo: make a short initial repeat delay, e.g. 150ms, then a faster repeat loop e.g. 50ms (or none really, the sending takes 80ms)
 
@@ -90,19 +90,35 @@ const int ROW4_MASK = COL4_MASK;
 
 // IDLE Sleep mode, requires an interrupt pin
 int wakePin = 2;
+
 // IR PIN is PWM pin 3 by default
+
 // Row / Col pins of the 5x4 switch matrix
-int colAPin = 8;
-int colBPin = 7;
-int colCPin = 6;
-int colDPin = 5;
+// -- Ardiuno Uno Layout
+//int colAPin = 9;
+//int colBPin = 11;
+//int colCPin = 10;
+//int colDPin = 12;
+//int colEPin = 4;
+//int row1Pin = 8;
+//int row2Pin = 6;
+//int row3Pin = 5;
+//int row4Pin = 7;
+// -- Atmega328-P (upside down) layout
+int colAPin = 12;
+int colBPin = 11;
+int colCPin = 10;
+int colDPin = 9;
 int colEPin = 4;
-int row1Pin = 12; // v2 PCB layout was easier in this order [12,10,9,11]
-int row2Pin = 10;
-int row3Pin = 9;
-int row4Pin = 11;
+int row1Pin = 8;
+int row2Pin = 6;
+int row3Pin = 5;
+int row4Pin = 7;
+
 // Diag / UX feedback LED (helps to know it's working!)
 int ledPin = 13;
+
+volatile bool woke = false;
 
 // ---- Logging ----
 
@@ -134,7 +150,7 @@ unsigned long idleTime, idleTimeout = 5000;
 // How long since the last key was pressed?
 void setIdleTime() {
   idleTime = millis();
-  Serial.println("setIdleTime now:"); Serial.println(idleTime);
+  Serial.print("setIdleTime now: "); Serial.println(idleTime);
 }
 long getIdleTime() {
   //Serial.println("getIdleTime millis() - idleTime:"); Serial.println(millis() - idleTime);
@@ -192,6 +208,23 @@ void pinSleep(){
     }
   pinMode(wakePin, INPUT_PULLUP);
 }
+void pinSleepAllInterrupts(){
+  pinMode(colCPin, OUTPUT);
+  pinMode(colDPin, OUTPUT);
+  pinMode(colEPin, OUTPUT);
+  pinMode(colAPin, OUTPUT);
+  pinMode(colBPin, OUTPUT);
+  digitalWrite (colAPin, LOW);
+  digitalWrite (colBPin, LOW);
+  digitalWrite (colCPin, LOW);
+  digitalWrite (colDPin, LOW);
+  digitalWrite (colEPin, LOW);
+  pinMode(row1Pin, INPUT_PULLUP);
+  pinMode(row2Pin, INPUT_PULLUP);
+  pinMode(row3Pin, INPUT_PULLUP);
+  pinMode(row4Pin, INPUT_PULLUP);
+  pinMode(wakePin, INPUT_PULLUP);
+}
 
 /* Example of low power benchmark (try INPUT/OUTPUT * LOW/HIGH - see notes)
  void setupGammonDemoLowPower () {
@@ -225,6 +258,8 @@ void setup() {
   delay(2);
   setIdleTime();
 
+  attachInterrupt(digitalPinToInterrupt(wakePin), wakeUp, CHANGE);
+
   // TODO remove POWER SAVING EXPERIMENTS
   // disable_wdt(); // todo experiment with power reduction
   // disable_adc();
@@ -245,6 +280,11 @@ void loop() {
   // Power saving option: DUTY SLEEP (note: this breaks the serial port timing!)
   // Enter power down state for 8 s with ADC and BOD module disabled
   // LowPower.powerDown(SLEEP_60MS, ADC_OFF, BOD_OFF);
+
+  if(woke) {
+    Serial.println("WOKE!");
+    woke = false;
+  }
 
   // Read keypad
   key = SwitchMatrix_read();
@@ -276,10 +316,9 @@ void loop() {
     // Send the command e.g. FE6897 = Mute, 32 bits for NEC, (no data bits for repeat signal).
     irsend.sendNEC(command, nbits);
     Serial.print(" NEC:");
-    Serial.print(command, HEX);
-    log(command, HEX);
-    Serial.println("");
-
+    Serial.println(command, HEX);
+    //log(command, HEX);
+    
     digitalWrite(ledPin, LOW); // debug LED
 
     setIdleTime();
@@ -295,7 +334,8 @@ void loop() {
   // Check for idle timeout and go to sleep to save power
   if (getIdleTimeout()) {
     Serial.print(" Idle Timeout!");
-    //  TODO remove already done by low-power lib? sleep_enable();                           // enables the sleep bit in the mcucr register
+    //  TODO remove already done by low-power lib? 
+    sleep_enable();                           // enables the sleep bit in the mcucr register
 
     Serial.print(" Idle Timeout: setting up interrupt pins");
     // Allow wake up pin to trigger interrupt on low.
@@ -303,7 +343,7 @@ void loop() {
 
     // Take all outputs low, so the switches can pull down the interrupt pin, while the strobing is paused.
     // setOutputs(31);
-    pinSleep(); // now does all pins for power saving
+    pinSleepAllInterrupts(); // now does all pins for power saving
 
     Serial.print(" Idle Timeout: Going to sleep...");
     delay(100);
@@ -331,6 +371,7 @@ void loop() {
 
 // Interrupt handler, don't really need to do anything
 void wakeUp() {
+  woke = true;
 }
 
 // ---- lib ----
