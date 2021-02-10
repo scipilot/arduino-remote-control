@@ -201,29 +201,33 @@ void pinSetup(){
 }
 // Set pins to the optimum low-power state for sleeping (see benchmarks, seems to vary on different hardware)
 // Note: for interupt design, must take outputs low during sleep, so any key-switch can pull down the interrupt pin while the strobing is paused.
-void pinSleep(){
+/* void pinSleep(){
     for (byte i = 0; i <= A5; i++){
       pinMode (i, OUTPUT);
-      digitalWrite (i, LOW);
+      digitalWrite (i, LOW); //TODO: THIS doesn't work on the Atmega328 directly??
     }
   pinMode(wakePin, INPUT_PULLUP);
-}
-void pinSleepAllInterrupts(){
-  pinMode(colCPin, OUTPUT);
-  pinMode(colDPin, OUTPUT);
-  pinMode(colEPin, OUTPUT);
-  pinMode(colAPin, OUTPUT);
-  pinMode(colBPin, OUTPUT);
+}*/
+void pinSleep(){
+//  pinMode(colCPin, OUTPUT);
+//  pinMode(colDPin, OUTPUT);
+//  pinMode(colEPin, OUTPUT);
+//  pinMode(colAPin, OUTPUT);
+//  pinMode(colBPin, OUTPUT);
   digitalWrite (colAPin, LOW);
   digitalWrite (colBPin, LOW);
   digitalWrite (colCPin, LOW);
   digitalWrite (colDPin, LOW);
   digitalWrite (colEPin, LOW);
-  pinMode(row1Pin, INPUT_PULLUP);
-  pinMode(row2Pin, INPUT_PULLUP);
-  pinMode(row3Pin, INPUT_PULLUP);
-  pinMode(row4Pin, INPUT_PULLUP);
-  pinMode(wakePin, INPUT_PULLUP);
+//  pinMode(row1Pin, INPUT_PULLUP);
+//  pinMode(row2Pin, INPUT_PULLUP);
+//  pinMode(row3Pin, INPUT_PULLUP);
+//  pinMode(row4Pin, INPUT_PULLUP);
+//  pinMode(wakePin, INPUT_PULLUP);
+}
+// opposite of pinSleep (optimised for speed)
+void pinWake(){
+  // nothing to do atm
 }
 
 /* Example of low power benchmark (try INPUT/OUTPUT * LOW/HIGH - see notes)
@@ -258,7 +262,8 @@ void setup() {
   delay(2);
   setIdleTime();
 
-  attachInterrupt(digitalPinToInterrupt(wakePin), wakeUp, CHANGE);
+  // I can leave the wake interrupt on all the time, it just then fires when awake too. (tested)
+  //attachInterrupt(digitalPinToInterrupt(wakePin), wakeUp, CHANGE);
 
   // TODO remove POWER SAVING EXPERIMENTS
   // disable_wdt(); // todo experiment with power reduction
@@ -333,35 +338,35 @@ void loop() {
 
   // Check for idle timeout and go to sleep to save power
   if (getIdleTimeout()) {
-    Serial.print(" Idle Timeout!");
-    //  TODO remove already done by low-power lib? 
-    sleep_enable();                           // enables the sleep bit in the mcucr register
+    //  TODO remove already done by low-power lib? YES NOT NEEDED
+    // sleep_enable();                           // enables the sleep bit in the mcucr register
 
     Serial.print(" Idle Timeout: setting up interrupt pins");
     // Allow wake up pin to trigger interrupt on low.
     attachInterrupt(digitalPinToInterrupt(wakePin), wakeUp, CHANGE);
 
-    // Take all outputs low, so the switches can pull down the interrupt pin, while the strobing is paused.
-    // setOutputs(31);
-    pinSleepAllInterrupts(); // now does all pins for power saving
-
+    // Take all outputs low, so any switche can pull down the interrupt pin, while the strobing is paused.
+    // also optimised pins for power saving
+    pinSleep(); 
+    
     Serial.print(" Idle Timeout: Going to sleep...");
-    delay(100);
+    Serial.flush();
+    //delay(100);
     
     // Enter power down state with ADC and BOD module disabled.
-    // Wake up when wake up pin is low.
     LowPower.powerDown(SLEEP_FOREVER, ADC_OFF, BOD_OFF);
+    // ... Wakes up when interrupt pin changes.
 
     // Debug: Flash led to indicate wakeup
     digitalWrite(ledPin, HIGH); // Debug LED
 
-    delay(100);
+    //delay(50);
     Serial.print(" Idle Timeout: Wakeup!");
     // Disable external pin interrupt on wake up pin.
     detachInterrupt(digitalPinToInterrupt(wakePin));
 
     // restore active pin function
-    pinSetup();
+    pinWake();
 
     // Begin the idle countdown again...
     setIdleTime();
