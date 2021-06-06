@@ -571,28 +571,28 @@ int lookupKey(int row, int col) {
   };
 */
 
-// Map4: microswitch 4 row/ 5 col
+// Map4: microswitch 4 row / 5 col - Wooden Case #1
 long keyMap4[20] = {
-  GVA_32TDC15_MUTE,     //  1
-  GVA_32TDC15_VOL_UP,   //  2
-  GVA_32TDC15_VOL_DN,   //  3
-  GVA_32TDC15_D_MENU,   //  4
-  GVA_32TDC15_SOURCE,   //  5
-  GVA_32TDC15_EJECT,    //  6
-  GVA_32TDC15_RIGHT,    //  7
-  GVA_32TDC15_PLAY_PAUSE, // 8   // GVA_32TDC15_GRN_STEP, // 10 alt-pause
-  GVA_32TDC15_S_MODE,   //  9
-  GVA_32TDC15_UP,       // 10
-  GVA_32TDC15_ENTER,    // 11 alt-play after alt-pause
-  GVA_32TDC15_DOWN,     // 12
-  GVA_32TDC15_P_MODE,   // 13
-  GVA_32TDC15_MENU,     // 14
-  GVA_32TDC15_LEFT,     // 15
-  GVA_32TDC15_EXIT,     // 16
-  GVA_32TDC15_EXIT,     // 17
-  GVA_32TDC15_EXIT,     // 18
-  GVA_32TDC15_EXIT,     // 19
-  GVA_32TDC15_EXIT,     // 20
+  GVA_32TDC15_MUTE,         //  1 A1
+  GVA_32TDC15_UP,           //  2 A2
+  GVA_32TDC15_POWER,        //  3 A3
+  GVA_32TDC15_MENU,         //  4 A4  // TV Menu, aspect ratio
+  GVA_32TDC15_LEFT,         //  5 B1
+  GVA_32TDC15_DOWN,         //  6 B2
+  GVA_32TDC15_RIGHT,        //  7 B3
+  GVA_32TDC15_SOURCE,       // 8 B4  
+  GVA_32TDC15_EXIT,         //  9 C1
+  GVA_32TDC15_ENTER,        // 10 C2
+  GVA_32TDC15_PLAY_PAUSE,   // 11 C3 alt-play after alt-pause // GVA_32TDC15_GRN_STEP, // alt-pause
+  GVA_32TDC15_D_SETUP_OSD,  // 12 C4  
+  GVA_32TDC15_D_MENU,       // 13 D1
+  GVA_32TDC15_VOL_UP,       // 14 D2
+  GVA_32TDC15_EJECT,        // 15 D3
+  GVA_32TDC15_S_MODE,       // 16 D4
+  GVA_32TDC15_FAST_BACK,    // 17 E1
+  GVA_32TDC15_VOL_DN,       // 18 E2
+  GVA_32TDC15_FAST_FORW,    // 19 E3
+  GVA_32TDC15_P_MODE,       // 20 E4
 };
 long mapKeyToCommand(int key) {
   long command;
