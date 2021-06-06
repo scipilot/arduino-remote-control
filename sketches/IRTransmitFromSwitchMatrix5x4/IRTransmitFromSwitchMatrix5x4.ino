@@ -71,6 +71,23 @@ IRsend irsend;
 
 #define LOOP_DELAY 100
 
+#define DEBUG_SERIAL_PRINT
+#if defined DEBUG_SERIAL_PRINT
+#define DEBUG_PRINTLN(X) Serial.println(X)
+#else
+#define DEBUG_PRINTLN(X)
+#endif
+#if defined DEBUG_SERIAL_PRINT
+#define DEBUG_PRINTLNHEX(X) Serial.println(X,"HEX")
+#else
+#define DEBUG_PRINTLNHEX(X)
+#endif
+#if defined DEBUG_SERIAL_PRINT
+#define DEBUG_PRINT(X) Serial.print(X)
+#else
+#define DEBUG_PRINT(X)
+#endif
+
 const int BIT1_MASK = B00001;
 const int BIT2_MASK = B00010;
 const int BIT3_MASK = B00100;
@@ -131,16 +148,16 @@ long getDelta() {
 
   return delta;
 }
-// Logs with time since last message for timing (replaces Serial.println)
+// Logs with time since last message for timing
 void log(char *msg) {
-  Serial.print(getDelta());
-  Serial.print(": ");
-  Serial.println(msg);
+  DEBUG_PRINT(getDelta());
+  DEBUG_PRINT(": ");
+  DEBUG_PRINTLN(msg);
 }
-void log(unsigned long msg, int format) {
-  Serial.print(getDelta());
-  Serial.print(": ");
-  Serial.println(msg, format);
+void log(unsigned long msg) {
+  DEBUG_PRINT(getDelta());
+  DEBUG_PRINT(": ");
+  DEBUG_PRINTLN(msg);
 }
 
 // ---- IDLE sleeping
@@ -150,13 +167,13 @@ unsigned long idleTime, idleTimeout = 5000;
 // How long since the last key was pressed?
 void setIdleTime() {
   idleTime = millis();
-  Serial.print("setIdleTime now: "); Serial.println(idleTime);
+  DEBUG_PRINT("setIdleTime now: "); DEBUG_PRINTLN(idleTime); 
 }
 long getIdleTime() {
-  //Serial.println("getIdleTime millis() - idleTime:"); Serial.println(millis() - idleTime);
+  //DEBUG_PRINTLN("getIdleTime millis() - idleTime:"); DEBUG_PRINTLN(millis() - idleTime);
   //long now = millis();
   //long delta = now - idleTime;
-  //Serial.println("getIdleTime delta"); Serial.println(delta);
+  //DEBUG_PRINTLN("getIdleTime delta"); DEBUG_PRINTLN(delta);
   //return delta;
   return millis() - idleTime;
 }
@@ -168,21 +185,21 @@ bool getIdleTimeout() {
 // ----
 
 void runtest(unsigned long data,  int nbits) {
-  Serial.println("-- Same test again --");
-  Serial.println(data, HEX);
-  Serial.print(" nbits = ");
-  Serial.println(nbits);
-  if (nbits == 0) Serial.println("nbits == 0"); else Serial.println("nbits != 0 ");
+  DEBUG_PRINTLN("-- Same test again --");
+  DEBUG_PRINTLNHEX(data);
+  DEBUG_PRINT(" nbits = ");
+  DEBUG_PRINTLN(nbits);
+  if (nbits == 0) DEBUG_PRINTLN("nbits == 0"); else DEBUG_PRINTLN("nbits != 0 ");
   unsigned long  mask2 = (1UL << (0 - 1));
   unsigned long  mask3 = (1UL << (nbits - 1));
-  Serial.print(" 0 - 1 = ");
-  Serial.println(0 - 1);
-  Serial.print(" nbits - 1 = ");
-  Serial.println(nbits - 1);
-  Serial.print(" (1UL << (0 - 1) = ");
-  Serial.println(1UL << (0 - 1));
-  Serial.print(" (1UL << (nbits - 1) = ");
-  Serial.println(1UL << (nbits - 1));
+  DEBUG_PRINT(" 0 - 1 = ");
+  DEBUG_PRINTLN(0 - 1);
+  DEBUG_PRINT(" nbits - 1 = ");
+  DEBUG_PRINTLN(nbits - 1);
+  DEBUG_PRINT(" (1UL << (0 - 1) = ");
+  DEBUG_PRINTLN(1UL << (0 - 1));
+  DEBUG_PRINT(" (1UL << (nbits - 1) = ");
+  DEBUG_PRINTLN(1UL << (nbits - 1));
 }
 
 // Set pins to active state
@@ -257,7 +274,7 @@ void pinWake(){
 
 void setup() {
   Serial.begin(9600);
-  Serial.print("IRTransmitFromKeypad: setup...");
+  DEBUG_PRINT("IRTransmitFromKeypad: setup...");
   pinSetup();
   delay(2);
   setIdleTime();
@@ -287,17 +304,17 @@ void loop() {
   // LowPower.powerDown(SLEEP_60MS, ADC_OFF, BOD_OFF);
 
   if(woke) {
-    Serial.println("WOKE!");
+    DEBUG_PRINTLN("WOKE!");
     woke = false;
   }
 
   // Read keypad
   key = SwitchMatrix_read();
   if (key) {
-    Serial.print(" Key:");
-    Serial.print(key);
-    Serial.print(" LastKey:");
-    Serial.print(lastKey);
+    DEBUG_PRINT(" Key:");
+    DEBUG_PRINT(key);
+    DEBUG_PRINT(" LastKey:");
+    DEBUG_PRINT(lastKey);
     if (key == lastKey) {
       // NEC sends 0xFFFFFFFF for repeat (not the same command) so detect key held down, then switch to sending FFFFFFFF
       command =  REPEAT;
@@ -320,9 +337,8 @@ void loop() {
 
     // Send the command e.g. FE6897 = Mute, 32 bits for NEC, (no data bits for repeat signal).
     irsend.sendNEC(command, nbits);
-    Serial.print(" NEC:");
-    Serial.println(command, HEX);
-    //log(command, HEX);
+    DEBUG_PRINT(" NEC:");
+    DEBUG_PRINTLNHEX(command);
     
     digitalWrite(ledPin, LOW); // debug LED
 
@@ -341,7 +357,7 @@ void loop() {
     //  TODO remove already done by low-power lib? YES NOT NEEDED
     // sleep_enable();                           // enables the sleep bit in the mcucr register
 
-    Serial.print(" Idle Timeout: setting up interrupt pins");
+    DEBUG_PRINT(" Idle Timeout: setting up interrupt pins");
     // Allow wake up pin to trigger interrupt on low.
     attachInterrupt(digitalPinToInterrupt(wakePin), wakeUp, CHANGE);
 
@@ -349,7 +365,7 @@ void loop() {
     // also optimised pins for power saving
     pinSleep(); 
     
-    Serial.print(" Idle Timeout: Going to sleep...");
+    DEBUG_PRINT(" Idle Timeout: Going to sleep...");
     Serial.flush();
     //delay(100);
     
@@ -361,7 +377,7 @@ void loop() {
     digitalWrite(ledPin, HIGH); // Debug LED
 
     //delay(50);
-    Serial.print(" Idle Timeout: Wakeup!");
+    DEBUG_PRINT(" Idle Timeout: Wakeup!");
     // Disable external pin interrupt on wake up pin.
     detachInterrupt(digitalPinToInterrupt(wakePin));
 
@@ -407,27 +423,27 @@ int SwitchMatrix_read() {
     rows = rows + BIT1_MASK * !row;
     if (rows) {
       // Print a "standard key identifier" for easier testing: A1 thru E4, e.g. where A = output1 (D8) +  1 = input 1 (D12)
-      if (i == 1) Serial.print("A");
-      if (i == 2) Serial.print("B");
-      if (i == 3) Serial.print("C");
-      if (i == 4) Serial.print("D");
-      if (i == 5) Serial.print("E");
-      if (!row1) Serial.print("1");
-      if (!row2) Serial.print("2");
-      if (!row3) Serial.print("3");
-      if (!row4) Serial.print("4");
-      Serial.print(" c=");
-      Serial.print(col);
-      Serial.print(" r4=");
-      Serial.print(row4);
-      Serial.print(" r3=");
-      Serial.print(row3);
-      Serial.print(" r2=");
-      Serial.print(row2);
-      Serial.print(" r1=");
-      Serial.print(row1);
-      Serial.print(" =>");
-      Serial.println(rows);
+      if (i == 1) DEBUG_PRINT("A");
+      if (i == 2) DEBUG_PRINT("B");
+      if (i == 3) DEBUG_PRINT("C");
+      if (i == 4) DEBUG_PRINT("D");
+      if (i == 5) DEBUG_PRINT("E");
+      if (!row1) DEBUG_PRINT("1");
+      if (!row2) DEBUG_PRINT("2");
+      if (!row3) DEBUG_PRINT("3");
+      if (!row4) DEBUG_PRINT("4");
+      DEBUG_PRINT(" c=");
+      DEBUG_PRINT(col);
+      DEBUG_PRINT(" r4=");
+      DEBUG_PRINT(row4);
+      DEBUG_PRINT(" r3=");
+      DEBUG_PRINT(row3);
+      DEBUG_PRINT(" r2=");
+      DEBUG_PRINT(row2);
+      DEBUG_PRINT(" r1=");
+      DEBUG_PRINT(row1);
+      DEBUG_PRINT(" =>");
+      DEBUG_PRINTLN(rows);
 
     }
     // First key found takes precenence
@@ -489,21 +505,21 @@ int SwitchMatrixMap[20] = {
 // Converts the row-col combination into our key index.
 // Returns 1-16, or 0 for error/not found.
 int lookupKey(int row, int col) {
-  //    Serial.print(" lookup row=");
-  //    Serial.print(row);
-  //    Serial.print(" col=");
-  //    Serial.print(col);
+  //DEBUG_PRINT(" lookup row=");
+  //DEBUG_PRINT(row);
+  //DEBUG_PRINT(" col=");
+  //DEBUG_PRINT(col);
 
   int hash = row + (col << 4); // shift col into upper nibble
 
-  //    Serial.print(" hash=");
-  //    Serial.println(hash);
+  //DEBUG_PRINT(" hash=");
+  //DEBUG_PRINTLN(hash);
 
   for (int i = 0; i <= 19; i++) {
-    // Serial.print(" SwitchMatrixMap[i]=");
-    // Serial.println(SwitchMatrixMap[i]);
-    //    if(SwitchMatrixMap[i] == hash) Serial.println(i+1);
-    if (SwitchMatrixMap[i] == hash) return i + 1;
+    //DEBUG_PRINT(" SwitchMatrixMap[i]=");
+    //DEBUG_PRINTLN(SwitchMatrixMap[i]);
+    if(SwitchMatrixMap[i] == hash) DEBUG_PRINTLN(i+1);
+    if(SwitchMatrixMap[i] == hash) return i + 1;
   }
 
   // oops, could be a multi-key combo?
