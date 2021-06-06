@@ -73,7 +73,7 @@ IRsend irsend;
 
 const int BIT1_MASK = B00001;
 const int BIT2_MASK = B00010;
-const int BIT3_MASK = B00010;
+const int BIT3_MASK = B00100;
 const int BIT4_MASK = B01000;
 const int BIT5_MASK = B10000;
 
